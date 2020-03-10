@@ -189,22 +189,18 @@ export class Obj_File_Demo extends Scene
             "text": new Text_Line( 35 ),
             "square": new defs.Square(),
             "sheet" : new defs.Grid_Patch( 100, 100, row_operation, column_operation ),
-
-            "blood" : new defs.Cube(),
-            "gameover": new Text_Line( 35 ),
-            "HP": new Text_Line( 35 ),
+            "sheet2" : new defs.Grid_Patch( 3, 3, row_operation, column_operation ),
+            "sheet3" : new defs.Grid_Patch( 2, 5, row_operation, column_operation ),
 
 //             "text": new Text_Line( 35 )
 
         };
 
-
         this.materials = {
-            blood: new Material(new defs.Phong_Shader(),{color:color(1,0,0,1),ambient: 0.3, diffusivity:0.5}),
             frame: new Material(new defs.Phong_Shader(),{color:color(0.396, 0.263, 0.129,1), ambient:0.3, diffusivity:0.3}),
             desk: new Material(new defs.Phong_Shader(),{color: color(1,1,1,1), ambient:0.6,diffusivity:0.3,specularity:0.5}),
             screen: new Material(new defs.Phong_Shader(), {color: color(0,0,0,0.99), ambient:0.6,diffusivity:0.3,specularity:0.5} ),
-            Bigscreen: new Material(new defs.Phong_Shader(), {color: color(1,1,1,0.99), ambient:1, texture:new Texture("assets/earth.gif", false)}),
+            Bigscreen: new Material(new defs.Phong_Shader(), {color: color(0,0,0,0.99), ambient:1}),
             flag: new Material(new defs.Phong_Shader(), {color: color(0,0.388,0.694,1), ambient:0.7}),
             flag_pole: new Material(new defs.Phong_Shader(), {color: color(0,0, 0, 1), ambient:1,diffusivity:0.3,specularity:0.5}),
             flag_UCLA: new Material(new defs.Phong_Shader(), {color: color(0.7,0.667,0,1), ambient:0.6,diffusivity:0.3,specularity:0.5}),
@@ -229,9 +225,23 @@ export class Obj_File_Demo extends Scene
             soil: new Material( new defs.Textured_Phong(1), { ambient: 1, texture: new Texture( "assets/grass.jpg" ) } ),
             // //sky: new Material(new defs.Textured_Phong(1), { color: color( 0.529,0.808,0.922,0.99), ambient:.4, texture: this.textures.sky})
             sky: new Material( new defs.Textured_Phong(1), { ambient: 1, texture: new Texture( "assets/sky2.png" ) } ),
+            //matrix: new Material( new defs.Textured_Phong(1), { ambient: 1, texture: new Texture( "assets/matrix.jpg" ) } ),
+            matrix: new Material( new defs.Textured_Phong(1), { ambient: 1, texture: new Texture( "assets/matrix3.jpg" ) } ),
+            small_screen: new Material( new defs.Textured_Phong(1), { ambient: 1, texture: new Texture( "assets/small_screen.jpg" ) } ),
         };
                                       // Don't create any DOM elements to control this scene:
         this.widget_options = { make_controls: true };
+                                                          // Non bump mapped:
+//          this.stars = new Material( new defs.Textured_Phong( 1 ),  { color: color( .5,.5,.5,1 ),
+//            ambient: .3, diffusivity: .5, specularity: .5, texture: new Texture( "assets/stars.png" ) });
+//                                                            // Bump mapped:
+//          this.bumps = new Material( new defs.Fake_Bump_Map( 1 ), { color: color( .5,.5,.5,1 ),
+//            ambient: .3, diffusivity: .5, specularity: .5, texture: new Texture( "assets/stars.png" ) });
+
+//          this.text_image = new Material(new defs.Textured_Phong( 1 ), { ambient: 1, diffusivity: 0, specularity: 0,
+//                                                  texture: new Texture( "assets/text.png" ) });
+
+
 
 
 
@@ -247,9 +257,6 @@ export class Obj_File_Demo extends Scene
          this.game_started = 0;
          this.timestamp = 0;
 
-         this.correct = true;
-         this.blood = 3;
-
       }
 
       make_control_panel(){
@@ -261,46 +268,9 @@ export class Obj_File_Demo extends Scene
           this.new_line();
           this.key_triggered_button("View TA 1 side", ["8"], () => this.attached = () => this.TA_1_side);
           this.new_line();
-
           this.new_line();
           this.key_triggered_button("View TA 2", ["7"], () => this.attached = () => this.TA_2);
-
-          this.new_line();
-          this.key_triggered_button("correct/incorrect", ["6"], () => {
-
-            this.correct = !this.correct;
-            if (this.correct == false){
-                  this.blood = this.blood-1;
-            }
-
-        })
       };
-
-    draw_blood(context, program_state, transform, blood){
-
-          
-          if (blood > 0){
-
-               let my_string = "HP";
-               let title_scale = 0.02;
-               this.shapes.HP.set_string(my_string, context.context);
-               this.shapes.HP.draw(context, program_state,  Mat4.translation(-1,0,0).times(transform), this.materials.text_image);
-
-
-               for(var i = 0; i <blood; i++){
-
-                     this.shapes.blood.draw(context, program_state, transform, this.materials.blood);
-                     transform = Mat4.translation(0.8,0,0).times(transform);
-                }
-
-          }
-          else{
-               let my_string = "Game Over";
-               let title_scale = 0.02;
-               this.shapes.gameover.set_string(my_string, context.context);
-               this.shapes.gameover.draw(context, program_state,  Mat4.translation(-0.6,-0.4,0).times(transform), this.materials.text_image);
-          }
-    };
 
     draw_start_screen(context, program_state) {
         let cover_transform = program_state.camera_inverse;
@@ -317,9 +287,7 @@ export class Obj_File_Demo extends Scene
         text_transform = text_transform.times(Mat4.scale(title_scale, title_scale, title_scale));
         this.shapes.text.set_string(my_string, context.context);
         this.shapes.text.draw(context, program_state, text_transform, this.materials.text_image);
-    };
-
-    
+    }
 
     display( context, program_state )
       {
@@ -360,46 +328,29 @@ export class Obj_File_Demo extends Scene
 
 
         // TA 1 transform
-        var blood_transform = Mat4.scale(0.2,0.2,0.2).times(Mat4.translation(-18, -4.5, 0));
+        var head_transform = Mat4.translation(-3, -2.8, 0)
+                .times(Mat4.rotation(Math.PI*3/2, 0,1,0))
+                .times(Mat4.scale(0.6,0.6,0.6));
 
+        var model_transform2 = Mat4.translation(-3.1,-2.3,0.2)
+                .times(Mat4.rotation(Math.PI*3/2, 0,1,0))
+                .times(Mat4.scale(0.6,0.6,0.6));
+
+        var glass_transform = Mat4.translation(-3, -2.7, 0.2)
+            .times(Mat4.rotation(Math.PI*3/2, 0,1,0))
+            .times(Mat4.scale(0.5,0.5,0.5));
 
         var body_transform = Mat4.translation(-3, -3.8, 0)
             .times(Mat4.rotation(Math.PI*3/2, 0,1,0))
-            .times(Mat4.scale(0.5,0.5,0.5));    
-
-
-        var head_transform = Mat4.translation(0, 1, 0)
-                .times(body_transform)
-                .times(Mat4.scale(1.2,1.2,1.2));
-
-
-        if (this.correct == true){
-              body_transform = Mat4.translation(0, (0.5*Math.abs(Math.sin(Math.PI*t/500))), 0).times(body_transform);
-              head_transform = Mat4.translation(0, 1, 0)
-                .times(body_transform)
-                .times(Mat4.scale(1.2,1.2,1.2));
-        }
-        else{
-              head_transform = head_transform.times(Mat4.rotation(Math.sin(Math.PI*t/350),0,1,0));
-
-        }
-
-        var model_transform2 = Mat4.translation(-0.1,0.6,0.2)
-                .times(head_transform);
-
-        var glass_transform = Mat4.translation(0, 0.1, 0.2)
-            .times(head_transform)
-            .times(Mat4.scale(0.84,0.84,0.84));
-
-        
+            .times(Mat4.scale(0.5,0.5,0.5));
 
         //var right_arm = body_transform.times(Mat4.translation(0,-0.7,1.1));
         var left_arm = body_transform.times(Mat4.translation(0,-0.7,-1.1));
 
 
 
-        var right_arm = body_transform.times(Mat4.translation(3, 3.8, 0)).times(Mat4.rotation(-Math.PI*3/2, 0,1,0));
-        var right_hand = body_transform.times(Mat4.translation(3, 3.8, 0)).times(Mat4.rotation(-Math.PI*3/2, 0,1,0)).times(Mat4.scale(0.5, 0.5, 0.5));
+        var right_arm = Mat4.identity().times(Mat4.scale(0.5, 0.5, 0.5));
+        var right_hand = Mat4.identity().times(Mat4.scale(0.25, 0.25, 0.25));
 
 
         if (this.TA1_arm_movement == true){
@@ -407,10 +358,10 @@ export class Obj_File_Demo extends Scene
               right_hand = right_arm.times(Mat4.translation(0,-1.3,0.1).times(Mat4.scale(0.5,0.5,0.5)));
         }
         else if (this.TA1_punch == true){
-              right_arm = Mat4.translation(0,0,-1.4).times(right_arm).times(Mat4.scale(1,1,-(0.55+0.8*Math.abs(Math.sin(Math.PI*t/500)))))
-              .times(Mat4.translation(-1.1, -3.7, -0.79)).times(Mat4.rotation(Math.PI/2, 1,0,0));
-              right_hand = Mat4.translation(-0.25,-0.9,0).times(right_hand).times(Mat4.translation(0,0,(-1.75+2*Math.abs(Math.sin(Math.PI*t/500)))))
-                  .times(Mat4.translation(-1.1, -3.7, -1.3));
+              right_arm = right_arm.times(Mat4.scale(1,1,-(0.5+Math.abs(Math.sin(Math.PI*t/500)))))
+              .times(Mat4.translation(-7, -7.2, -0.8)).times(Mat4.rotation(Math.PI/2, 1,0,0));
+              right_hand = right_hand.times(Mat4.translation(0,0,(-0.54+Math.abs(Math.sin(Math.PI*t/500)))))
+                  .times(Mat4.translation(-14, -14.4, 4.2));
         }
         else{
               right_arm = right_arm.times(Mat4.rotation(-Math.abs(Math.sin(Math.PI*t/200)/4), 1,0,0))
@@ -418,14 +369,8 @@ export class Obj_File_Demo extends Scene
               right_hand = right_hand.times(Mat4.rotation(-Math.abs(Math.sin(Math.PI*t/200)/4), 1,0,0))
                   .times(Mat4.translation(-14, -18.4, -1.3));
         }
-
-
         this.TA_1 = Mat4.inverse(Mat4.translation(-3, -2.7, 0.2));
-        this.TA_1_side = Mat4.inverse(Mat4.translation(0, 1, 0)
-                .times((Mat4.translation(-3, -3.8, 0)
-            .times(Mat4.rotation(Math.PI*3/2, 0,1,0))
-            .times(Mat4.scale(0.5,0.5,0.5))))
-                .times(Mat4.scale(1.2,1.2,1.2)).times(Mat4.translation(-7,0,7)));
+        this.TA_1_side = Mat4.inverse(head_transform.times(Mat4.translation(-7,0,7)));
 
 
         // TA 2 Transform
@@ -524,7 +469,7 @@ export class Obj_File_Demo extends Scene
         this.shapes.TA1_Leg.draw(context, program_state,body_transform.times(Mat4.translation(0, -3.7,-0.4)), this.materials.leg);
         // this.shapes.TA1_Shoes.draw(context, program_state,body_transform.times(Mat4.translation(0.7, -4.7,-0.4).times(Mat4.scale(0.8,0.8,0.8))), this.materials.skin);
         // this.shapes.TA1_Shoes.draw(context, program_state,body_transform.times(Mat4.translation(0.7, -4.7,0.4).times(Mat4.scale(0.8,0.8,0.8))), this.materials.skin);
-        this.draw_blood(context,program_state,blood_transform,this.blood);
+
 
 
         this.shapes.TA2_hair.draw( context, program_state, model_transform2_ta2, this.materials.hair_2);
@@ -553,6 +498,15 @@ export class Obj_File_Demo extends Scene
 
         var mt_transform = Mat4.translation(0, 0, -50).times(Mat4.scale(200, 200, 200));
         this.shapes.sheet.draw(context, program_state, mt_transform, this.materials.sky);
+
+        var screen_transform = Mat4.translation(3.1, 3.5, -1.8).times(Mat4.scale(9, 9, 9));
+        this.shapes.sheet2.draw(context, program_state, screen_transform, this.materials.matrix);
+
+        var s_screen_transform = Mat4.translation(3.65, -2.15, 0.15).times(Mat4.rotation(Math.PI/2, 0, 1, 0)).times(Mat4.scale(2, 2, 2));
+        this.shapes.sheet2.draw(context, program_state, s_screen_transform, this.materials.small_screen);
+
+        var s_screen2_transform = Mat4.translation(3.65, -2.15, 4.55).times(Mat4.rotation(Math.PI/2, 0, 1, 0)).times(Mat4.scale(2, 2, 2));
+        this.shapes.sheet2.draw(context, program_state, s_screen2_transform, this.materials.small_screen);
       }
 
 

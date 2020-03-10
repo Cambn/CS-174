@@ -94,7 +94,7 @@ export class Text_Demo extends Scene
           {             // Assign the string to Text_String, and then draw it.
             this.shapes.text.set_string( line, context.context );
             this.shapes.text.draw( context, program_state, funny_orbit.times( cube_side )
-                                                 .times( Mat4.scale( .03,.03,.03 ) ), this.Text_image );
+                                                 .times( Mat4.scale( .03,.03,.03 ) ), this.text_image );
                         // Move our basis down a line.
             cube_side.post_multiply( Mat4.translation( 0,-.06,0 ) );
           }
