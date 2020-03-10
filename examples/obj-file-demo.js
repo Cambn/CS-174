@@ -238,6 +238,7 @@ export class Obj_File_Demo extends Scene
 
          this.attached = () => this.initial_camera_location;
          this.game_started = 0;
+         this.timestamp = 0;
 
       }
 
@@ -273,10 +274,25 @@ export class Obj_File_Demo extends Scene
 
     display( context, program_state )
       {
-          // Camera
+          const t = program_state.animation_time;
+          this.lights = [new Light(vec4(0, 5, 5, 1), color(1,1,1,1),100000)];
 
+          if( !context.scratchpad.controls )
+              this.children.push( context.scratchpad.controls = new defs.Movement_Controls() );
+
+          // Camera
           var desired = this.attached();
-          if (desired == this.initial_camera_location){
+
+          // intro camera movements
+          if (this.game_started && t < (this.timestamp + 2000)) {
+              desired = this.TA_1;
+          } else if (this.game_started && t < (this.timestamp + 4000)) {
+              desired = this.TA_2;
+          }
+
+
+
+          if (desired === this.initial_camera_location){
               program_state.camera_transform = Mat4.inverse(desired).map((x, idx) => Vector.from(program_state.camera_transform[idx]).mix(x, 0.1))
           }
           else {
@@ -287,11 +303,8 @@ export class Obj_File_Demo extends Scene
 
           program_state.set_camera( Mat4.inverse(program_state.camera_transform) );
 
-          const t = program_state.animation_time;
-        this.lights = [new Light(vec4(0, 5, 5, 1), color(1,1,1,1),100000)];
 
-        if( !context.scratchpad.controls )
-            this.children.push( context.scratchpad.controls = new defs.Movement_Controls() );
+
 
 
 
@@ -454,6 +467,7 @@ export class Obj_File_Demo extends Scene
         if (!this.game_started) {
             program_state.set_camera(this.initial_camera_location);
             this.draw_start_screen(context, program_state);
+            this.timestamp = t;
         }
       }
 
