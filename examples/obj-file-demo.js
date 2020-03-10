@@ -189,6 +189,8 @@ export class Obj_File_Demo extends Scene
             "text": new Text_Line( 35 ),
             "square": new defs.Square(),
             "sheet" : new defs.Grid_Patch( 100, 100, row_operation, column_operation ),
+            "sheet2" : new defs.Grid_Patch( 3, 3, row_operation, column_operation ),
+            "sheet3" : new defs.Grid_Patch( 2, 5, row_operation, column_operation ),
 
             "blood" : new defs.Cube(),
             "gameover": new Text_Line( 35 ),
@@ -204,7 +206,7 @@ export class Obj_File_Demo extends Scene
             frame: new Material(new defs.Phong_Shader(),{color:color(0.396, 0.263, 0.129,1), ambient:0.3, diffusivity:0.3}),
             desk: new Material(new defs.Phong_Shader(),{color: color(1,1,1,1), ambient:0.6,diffusivity:0.3,specularity:0.5}),
             screen: new Material(new defs.Phong_Shader(), {color: color(0,0,0,0.99), ambient:0.6,diffusivity:0.3,specularity:0.5} ),
-            Bigscreen: new Material(new defs.Phong_Shader(), {color: color(1,1,1,0.99), ambient:1, texture:new Texture("assets/earth.gif", false)}),
+            Bigscreen: new Material(new defs.Phong_Shader(), {color: color(0,0,0,0.99), ambient:1, texture:new Texture("assets/earth.gif", false)}),
             flag: new Material(new defs.Phong_Shader(), {color: color(0,0.388,0.694,1), ambient:0.7}),
             flag_pole: new Material(new defs.Phong_Shader(), {color: color(0,0, 0, 1), ambient:1,diffusivity:0.3,specularity:0.5}),
             flag_UCLA: new Material(new defs.Phong_Shader(), {color: color(0.7,0.667,0,1), ambient:0.6,diffusivity:0.3,specularity:0.5}),
@@ -229,6 +231,8 @@ export class Obj_File_Demo extends Scene
             soil: new Material( new defs.Textured_Phong(1), { ambient: 1, texture: new Texture( "assets/grass.jpg" ) } ),
             // //sky: new Material(new defs.Textured_Phong(1), { color: color( 0.529,0.808,0.922,0.99), ambient:.4, texture: this.textures.sky})
             sky: new Material( new defs.Textured_Phong(1), { ambient: 1, texture: new Texture( "assets/sky2.png" ) } ),
+            matrix: new Material( new defs.Textured_Phong(1), { ambient: 1, texture: new Texture( "assets/matrix3.jpg" ) } ),
+            small_screen: new Material( new defs.Textured_Phong(1), { ambient: 1, texture: new Texture( "assets/small_screen.jpg" ) } ),
         };
                                       // Don't create any DOM elements to control this scene:
         this.widget_options = { make_controls: true };
@@ -553,6 +557,15 @@ export class Obj_File_Demo extends Scene
 
         var mt_transform = Mat4.translation(0, 0, -50).times(Mat4.scale(200, 200, 200));
         this.shapes.sheet.draw(context, program_state, mt_transform, this.materials.sky);
+
+        var screen_transform = Mat4.translation(3.1, 3.5, -1.8).times(Mat4.scale(9, 9, 9));
+        this.shapes.sheet2.draw(context, program_state, screen_transform, this.materials.matrix);
+
+        var s_screen_transform = Mat4.translation(3.65, -2.15, 0.15).times(Mat4.rotation(Math.PI/2, 0, 1, 0)).times(Mat4.scale(2, 2, 2));
+        this.shapes.sheet2.draw(context, program_state, s_screen_transform, this.materials.small_screen);
+
+        var s_screen2_transform = Mat4.translation(3.65, -2.15, 4.55).times(Mat4.rotation(Math.PI/2, 0, 1, 0)).times(Mat4.scale(2, 2, 2));
+        this.shapes.sheet2.draw(context, program_state, s_screen2_transform, this.materials.small_screen);
       }
 
 
