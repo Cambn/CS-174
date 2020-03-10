@@ -153,6 +153,10 @@ export class Obj_File_Demo extends Scene
       { super();
         const phong   = new defs.Phong_Shader();
         const texture = new defs.Textured_Phong( 1 );
+          const initial_corner_point = vec3( -1,-1,0 );
+          const row_operation = (s,p) => p ? Mat4.translation( 0,.2,0 ).times(p.to4(1)).to3()
+              : initial_corner_point;
+          const column_operation = (t,p) =>  Mat4.translation( .2,0,0 ).times(p.to4(1)).to3();
                                       // Load the model file:
         this.shapes = {
             "TA1_head": new Shape_From_File( "assets/headTA1.obj" ),
@@ -179,9 +183,12 @@ export class Obj_File_Demo extends Scene
             "bigScreen": new Shape_From_File("assets/bigScreen.obj"),
             "computerDesk": new Shape_From_File("assets/computerDesk.obj"),
             "computer": new Shape_From_File("assets/computer.obj"),
-            "flag": new Shape_From_File("assets/uclaFlag.obj"),
+            "flag": new Shape_From_File("assets/uclaFlag2.obj"),
+            "flag_pole": new Shape_From_File("assets/uclaFlag1.obj"),
+            "flag_UCLA": new Shape_From_File("assets/uclaFlag3.obj"),
             "text": new Text_Line( 35 ),
             "square": new defs.Square(),
+            "sheet" : new defs.Grid_Patch( 100, 100, row_operation, column_operation ),
 
 //             "text": new Text_Line( 35 )
 
@@ -192,7 +199,9 @@ export class Obj_File_Demo extends Scene
             desk: new Material(new defs.Phong_Shader(),{color: color(1,1,1,1), ambient:0.6,diffusivity:0.3,specularity:0.5}),
             screen: new Material(new defs.Phong_Shader(), {color: color(0,0,0,0.99), ambient:0.6,diffusivity:0.3,specularity:0.5} ),
             Bigscreen: new Material(new defs.Phong_Shader(), {color: color(1,1,1,0.99), ambient:1, texture:new Texture("assets/earth.gif", false)}),
-            flag: new Material(new defs.Phong_Shader(), {color: color(0.4,0.5,0.6,1), ambient:0.7}),
+            flag: new Material(new defs.Phong_Shader(), {color: color(0,0.388,0.694,1), ambient:0.7}),
+            flag_pole: new Material(new defs.Phong_Shader(), {color: color(0,0, 0, 1), ambient:1,diffusivity:0.3,specularity:0.5}),
+            flag_UCLA: new Material(new defs.Phong_Shader(), {color: color(0.7,0.667,0,1), ambient:0.6,diffusivity:0.3,specularity:0.5}),
             carpet: new Material(new defs.Phong_Shader(), {color: color(0.16,0,0,1), ambient:0.7}),
             wall: new Material(new defs.Phong_Shader(), {color: color(0.45,0.45, 0.45, 1), ambient:0.6,diffusivity:0.3,specularity:0.5}),
 
@@ -211,6 +220,9 @@ export class Obj_File_Demo extends Scene
                 texture: new Texture( "assets/text.png" ) }),
             cover: new Material(texture, {ambient: 1, diffusivity: 0, specularity: 0,
                 texture: new Texture("assets/cover.png")}),
+            soil: new Material( new defs.Textured_Phong(1), { ambient: 1, texture: new Texture( "assets/grass.jpg" ) } ),
+            // //sky: new Material(new defs.Textured_Phong(1), { color: color( 0.529,0.808,0.922,0.99), ambient:.4, texture: this.textures.sky})
+            sky: new Material( new defs.Textured_Phong(1), { ambient: 1, texture: new Texture( "assets/sky2.png" ) } ),
         };
                                       // Don't create any DOM elements to control this scene:
         this.widget_options = { make_controls: true };
@@ -410,9 +422,12 @@ export class Obj_File_Demo extends Scene
 
         this.shapes.carpet.draw(context,program_state,Mat4.scale(1.8,1.5,1.8).times(Mat4.translation(-1.3,-3.92,3.5)),this.materials.carpet);
 
-
-        this.shapes.flag.draw(context,program_state,Mat4.scale(2.5,2.5,2.5).times(Mat4.translation(-3,-1.025,1.3)),this.materials.flag);
-
+          this.shapes.flag.draw(context,program_state,Mat4.scale(2.5,2.5,2.5).times(Mat4.translation(-3,-0.9,1.3)),this.materials.flag);
+          this.shapes.flag_pole.draw(context,program_state,Mat4.scale(2.5,2.5,2.5).times(Mat4.translation(-3,-1.3,0)),this.materials.flag_pole);
+          this.shapes.flag_pole.draw(context,program_state,Mat4.scale(2.5,2.5,2.5).times(Mat4.translation(-3,-1.3,1)),this.materials.flag_pole);
+          this.shapes.flag_pole.draw(context,program_state,Mat4.scale(2.5,2.5,2.5).times(Mat4.translation(-3, -1.3,2)),this.materials.flag_pole);
+          this.shapes.flag_pole.draw(context,program_state,Mat4.scale(2.5,2.5,2.5).times(Mat4.translation(-3,-1.3,3)),this.materials.flag_pole);
+          this.shapes.flag_UCLA.draw(context,program_state,Mat4.scale(2.5,2.5,2.5).times(Mat4.translation(-2.97,-0.55,1.1)),this.materials.flag_UCLA);
 
         this.shapes.computerDesk.draw(context,program_state,Mat4.translation(3.8,-5.55,1.5),this.materials.desk);
         this.shapes.computer.draw(context,program_state,Mat4.translation(3.8,-4.1,1.5),this.materials.screen);
@@ -469,6 +484,15 @@ export class Obj_File_Demo extends Scene
             this.draw_start_screen(context, program_state);
             this.timestamp = t;
         }
+
+        var soil_transform = Mat4.translation(0, -6, -20).times(Mat4.rotation(Math.PI/2, 1, 0, 0)).times(Mat4.scale(200, 200, 200));
+        this.shapes.sheet.draw(context, program_state, soil_transform, this.materials.soil);
+
+        var sky_transform = Mat4.translation(0, 8, -20).times(Mat4.rotation(Math.PI/2, 1, 0, 0)).times(Mat4.scale(200, 200, 200));
+        this.shapes.sheet.draw(context, program_state, sky_transform, this.materials.sky);
+
+        var mt_transform = Mat4.translation(0, 0, -50).times(Mat4.scale(200, 200, 200));
+        this.shapes.sheet.draw(context, program_state, mt_transform, this.materials.sky);
       }
 
 
