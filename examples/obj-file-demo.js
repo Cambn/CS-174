@@ -1,4 +1,5 @@
 import {tiny, defs} from './common.js';
+import {Text_Line} from './text-demo.js';
                                                   // Pull these names into this module's scope for convenience:
 const {Vector, vec3, vec4, vec, color, Mat4, Light, Shape, Material, Shader, Texture, Scene } = tiny;
 
@@ -150,6 +151,8 @@ export class Obj_File_Demo extends Scene
                               // regular texture and Phong lighting.             
     constructor()                               
       { super();
+        const phong   = new defs.Phong_Shader();
+        const texture = new defs.Textured_Phong( 1 );
                                       // Load the model file:
         this.shapes = {
             "TA1_head": new Shape_From_File( "assets/headTA1.obj" ),
@@ -176,7 +179,9 @@ export class Obj_File_Demo extends Scene
             "bigScreen": new Shape_From_File("assets/bigScreen.obj"),
             "computerDesk": new Shape_From_File("assets/computerDesk.obj"),
             "computer": new Shape_From_File("assets/computer.obj"),
-            "flag": new Shape_From_File("assets/uclaFlag.obj")
+            "flag": new Shape_From_File("assets/uclaFlag.obj"),
+            "text": new Text_Line( 35 ),
+            "square": new defs.Square(),
 
 //             "text": new Text_Line( 35 )
 
@@ -202,6 +207,10 @@ export class Obj_File_Demo extends Scene
             body_2: new Material(new defs.Phong_Shader(), {color: color(0,0.23,0,1), ambient:1}),
             shoe_2: new Material(new defs.Phong_Shader(), {color: color(0.696,0.963,0.329,1), ambient:1}),
             leg_2: new Material(new defs.Phong_Shader(), {color: color(0.396,0.263,0.129,1), ambient:1}),
+            text_image: new Material( texture, { ambient: 1, diffusivity: 0, specularity: 0,
+                texture: new Texture( "assets/text.png" ) }),
+            cover: new Material(texture, {ambient: 1, diffusivity: 0, specularity: 0,
+                texture: new Texture("assets/cover.png")}),
         };
                                       // Don't create any DOM elements to control this scene:
         this.widget_options = { make_controls: true };
@@ -217,7 +226,7 @@ export class Obj_File_Demo extends Scene
 
 
 
-         this.lights = [new Light(vec4(0, 5, 5, 1), color(1,1,1,1),100000)];
+
 
 
          this.TA1_arm_movement = false;
@@ -225,13 +234,16 @@ export class Obj_File_Demo extends Scene
          this.TA1_punch = true;
          this.TA2_punch = true;
 
-         this.initial_camera_location = Mat4.translation( -2,0,-30 ) ;
+         this.initial_camera_location = Mat4.translation( 2,1,-25 ) ;
 
          this.attached = () => this.initial_camera_location;
+         this.game_started = 0;
 
       }
 
       make_control_panel(){
+          this.key_triggered_button( "Start Game", [ "Enter" ], function() { this.game_started = 1; } );
+          this.new_line();
           this.key_triggered_button("View room", ["0"], () => this.attached = () => this.initial_camera_location);
           this.new_line();
           this.key_triggered_button("View TA 1", ["9"], () => this.attached = () => this.TA_1);
@@ -242,12 +254,49 @@ export class Obj_File_Demo extends Scene
           this.key_triggered_button("View TA 2", ["7"], () => this.attached = () => this.TA_2);
       };
 
+    draw_start_screen(context, program_state) {
+        let cover_transform = program_state.camera_inverse;
+        let cover_scale = 0.877;
+        cover_transform = cover_transform.times(Mat4.scale(cover_scale, cover_scale, cover_scale));
+        cover_transform = cover_transform.times(Mat4.scale(1.8, 1, 1));
+        cover_transform = cover_transform.times(Mat4.translation(-2.535,-2.28,54.62));
+        this.shapes.square.draw( context, program_state, cover_transform, this.materials.cover);
+
+        let my_string = "PRESS ENTER TO START\n";
+        let text_transform = Mat4.identity();
+        let title_scale = 0.02;
+        text_transform = text_transform.times(Mat4.translation(-2.245,-1.33,24));
+        text_transform = text_transform.times(Mat4.scale(title_scale, title_scale, title_scale));
+        this.shapes.text.set_string(my_string, context.context);
+        this.shapes.text.draw(context, program_state, text_transform, this.materials.text_image);
+    }
+
     display( context, program_state )
-      { const t = program_state.animation_time;
+      {
+          // Camera
+
+          var desired = this.attached();
+          if (desired == this.initial_camera_location){
+              program_state.camera_transform = Mat4.inverse(desired).map((x, idx) => Vector.from(program_state.camera_transform[idx]).mix(x, 0.1))
+          }
+          else {
+              desired = desired.times(Mat4.translation(0, 0, -5));
+              program_state.camera_transform = Mat4.inverse(desired).map((x, idx) => Vector.from(program_state.camera_transform[idx]).mix(x, .1));
+          }
+
+
+          program_state.set_camera( Mat4.inverse(program_state.camera_transform) );
+
+          const t = program_state.animation_time;
+        this.lights = [new Light(vec4(0, 5, 5, 1), color(1,1,1,1),100000)];
 
         if( !context.scratchpad.controls )
             this.children.push( context.scratchpad.controls = new defs.Movement_Controls() );
-        
+
+
+
+
+
         // TA 1 transform
         var head_transform = Mat4.translation(-3, -2.8, 0)
                 .times(Mat4.rotation(Math.PI*3/2, 0,1,0))
@@ -269,7 +318,7 @@ export class Obj_File_Demo extends Scene
         var left_arm = body_transform.times(Mat4.translation(0,-0.7,-1.1));
 
 
-        
+
         var right_arm = Mat4.identity().times(Mat4.scale(0.5, 0.5, 0.5));
         var right_hand = Mat4.identity().times(Mat4.scale(0.25, 0.25, 0.25));
 
@@ -315,7 +364,7 @@ export class Obj_File_Demo extends Scene
         //var right_arm_ta2 = body_transform_ta2.times(Mat4.translation(-1.2,-0.7,-0.5)).times(Mat4.rotation(Math.sin(Math.PI*t/300)/2, 1,0,0));
         var left_arm_ta2 = body_transform_ta2.times(Mat4.translation(1.2,-0.7,-0.5));
         var right_arm_ta2 = Mat4.identity().times(Mat4.scale(0.5, 0.5, 0.5));
-            
+
         var right_hand_ta2 = Mat4.identity().times(Mat4.scale(0.25, 0.25, 0.25));
 
 
@@ -331,22 +380,10 @@ export class Obj_File_Demo extends Scene
         }
         this.TA_2 = Mat4.inverse(head_transform_ta2.times(Mat4.translation(1.5,0,0)));
 
-        // Camera
 
-        var desired = this.attached();
-        if (desired == this.initial_camera_location){
-            program_state.camera_transform = Mat4.inverse(desired).map((x, idx) => Vector.from(program_state.camera_transform[idx]).mix(x, 0.1))
-        }
-        else {
-            desired = desired.times(Mat4.translation(0, 0, -5));
-            program_state.camera_transform = Mat4.inverse(desired).map((x, idx) => Vector.from(program_state.camera_transform[idx]).mix(x, .1));
-        }
-               
-
-        program_state.set_camera( Mat4.inverse(program_state.camera_transform) );
 
         //program_state.set_camera( Mat4.translation( 0,0,-24 ) );    // Locate the camera here (inverted matrix).
-        program_state.projection_transform = Mat4.perspective( Math.PI/4, context.width/context.height, 1, 500 );
+        program_state.projection_transform = Mat4.perspective( Math.PI/4, context.width/context.height, 1, 100 );
                                                 // A spinning light to show off the bump map:
         // program_state.lights = [ new Light(
         //                          Mat4.rotation( t/300,   1,0,0 ).times( vec4( 3,2,10,1 ) ),
@@ -383,9 +420,9 @@ export class Obj_File_Demo extends Scene
 
 
 
-            
-       
-            
+
+
+
 
         this.shapes.TA1_hair.draw( context, program_state, model_transform2, this.materials.hair);
         this.shapes.TA1_head.draw(context, program_state,head_transform, this.materials.skin);
@@ -400,7 +437,7 @@ export class Obj_File_Demo extends Scene
         // this.shapes.TA1_Shoes.draw(context, program_state,body_transform.times(Mat4.translation(0.7, -4.7,-0.4).times(Mat4.scale(0.8,0.8,0.8))), this.materials.skin);
         // this.shapes.TA1_Shoes.draw(context, program_state,body_transform.times(Mat4.translation(0.7, -4.7,0.4).times(Mat4.scale(0.8,0.8,0.8))), this.materials.skin);
 
-        
+
 
         this.shapes.TA2_hair.draw( context, program_state, model_transform2_ta2, this.materials.hair_2);
         this.shapes.TA2_head.draw(context, program_state,head_transform_ta2, this.materials.skin_2);
@@ -412,24 +449,13 @@ export class Obj_File_Demo extends Scene
         this.shapes.TA2_Hand.draw(context, program_state, left_arm_ta2.times(Mat4.translation(0,-1,1).times(Mat4.scale(0.5,0.5,0.5))), this.materials.skin);
         this.shapes.TA2_Leg.draw(context, program_state,body_transform_ta2.times(Mat4.translation(-0.4, -3.5,0)), this.materials.leg_2);
         this.shapes.TA2_Leg.draw(context, program_state,body_transform_ta2.times(Mat4.translation(0.4, -3.5,0)), this.materials.leg_2);
-        
-        
 
 
-
-
-
-
-
-
-
-//         for( let i of [ -1, 1 ] )
-//         {                                       // Spin the 3D model shapes as well.
-//           const model_transform = Mat4.rotation( t/2000,   0,2,1 )
-//                           .times( Mat4.translation( 2*i, 0, 0 ) )
-//                           .times( Mat4.rotation( t/1500,   -1,2,0 ) )
-//                           .times( Mat4.rotation( -Math.PI/2,   1,0,0 ) );
-//                 }
+        if (!this.game_started) {
+            program_state.set_camera(this.initial_camera_location);
+            this.draw_start_screen(context, program_state);
+        }
       }
+
 
   }
