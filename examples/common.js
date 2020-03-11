@@ -466,7 +466,7 @@ class Funny_Shader extends Shader
       {        // update_GPU():  Define how to synchronize our JavaScript's variables to the GPU's:
         const [ P, C, M ] = [ program_state.projection_transform, program_state.camera_inverse, model_transform ],
                       PCM = P.times( C ).times( M );
-        context.uniformMatrix4fv( gpu_addresses.projection_camera_model_transform, false, Mat.flatten_2D_to_1D( PCM.transposed() ) );
+        context.uniformMatrix4fv( gpu_addresses.projection_camera_model_transform, false, Matrix.flatten_2D_to_1D( PCM.transposed() ) );
         context.uniform1f ( gpu_addresses.animation_time, program_state.animation_time / 1000 );
       }
   shared_glsl_code()            // ********* SHARED CODE, INCLUDED IN BOTH SHADERS *********
@@ -492,10 +492,10 @@ class Funny_Shader extends Shader
         { float a = animation_time, u = f_tex_coord.x, v = f_tex_coord.y;   
                                                                   // Use an arbitrary math function to color in all pixels as a complex                                                                  
           gl_FragColor = vec4(                                    // function of the UV texture coordintaes of the pixel and of time.  
-            2.0 * u * sin(17.0 * u ) + 3.0 * v * sin(11.0 * v ) + 1.0 * sin(13.0 * a),
-            3.0 * u * sin(18.0 * u ) + 4.0 * v * sin(12.0 * v ) + 2.0 * sin(14.0 * a),
-            4.0 * u * sin(19.0 * u ) + 5.0 * v * sin(13.0 * v ) + 3.0 * sin(15.0 * a),
-            5.0 * u * sin(20.0 * u ) + 6.0 * v * sin(14.0 * v ) + 4.0 * sin(16.0 * a));
+            (2.0 * u * sin(17.0 * u ) + 3.0 * v * sin(11.0 * v ) + 1.0 * sin(13.0 * a))*0.02,
+            (3.0 * u * sin(18.0 * u ) + 4.0 * v * sin(12.0 * v ) + 2.0 * sin(14.0 * a))*0.3,
+            (4.0 * u * sin(19.0 * u ) + 5.0 * v * sin(13.0 * v ) + 3.0 * sin(15.0 * a))*0.02,
+            (5.0 * u * sin(20.0 * u ) + 6.0 * v * sin(14.0 * v ) + 4.0 * sin(16.0 * a))*0.1);
         }`;
     }
 }
@@ -518,11 +518,15 @@ class Phong_Shader extends Shader
   shared_glsl_code()           // ********* SHARED CODE, INCLUDED IN BOTH SHADERS *********
     { return ` precision mediump float;
         const int N_LIGHTS = ` + this.num_lights + `;
-        uniform float ambient, diffusivity, specularity, smoothness;
+        uniform float ambient, diffusivity, specularity, smoothness, animation_time;
+        uniform bool GOURAUD, COLOR_NORMALS, SHADOW;
         uniform vec4 light_positions_or_vectors[N_LIGHTS], light_colors[N_LIGHTS];
         uniform float light_attenuation_factors[N_LIGHTS];
         uniform vec4 shape_color;
         uniform vec3 squared_scale, camera_center;
+        varying vec4 VERTEX_COLOR;
+        varying vec2 f_tex_coord;
+
 
                               // Specifier "varying" means a variable's final value will be passed from the vertex shader
                               // on to the next phase (fragment shader), then interpolated per-fragment, weighted by the
@@ -569,12 +573,14 @@ class Phong_Shader extends Shader
         uniform mat4 model_transform;
         uniform mat4 projection_camera_model_transform;
 
+        attribute vec2 texture_coord;
+
         void main()
           {                                                                   // The vertex's final resting place (in NDCS):
             gl_Position = projection_camera_model_transform * vec4( position, 1.0 );
                                                                               // The final normal vector in screen space.
             N = normalize( mat3( model_transform ) * normal / squared_scale);
-            
+            f_tex_coord = texture_coord;   
             vertex_worldspace = ( model_transform * vec4( position, 1.0 ) ).xyz;
           } ` ;
     }
@@ -582,10 +588,25 @@ class Phong_Shader extends Shader
     {                          // A fragment is a pixel that's overlapped by the current triangle.
                                // Fragments affect the final image or get discarded due to depth.                                 
       return this.shared_glsl_code() + `
+        uniform sampler2D shadow;
+        varying vec2 f_sha_coord;
         void main()
-          {                                                           // Compute an initial (ambient) color:
-            gl_FragColor = vec4( shape_color.xyz * ambient, shape_color.w );
-                                                                     // Compute the final color with contributions from lights:
+          {  if( GOURAUD || COLOR_NORMALS )    // Do smooth "Phong" shading unless options like "Gouraud mode" are wanted instead.
+             { gl_FragColor = VERTEX_COLOR;    // Otherwise, we already have final colors to smear (interpolate) across vertices.            
+               return;
+             } 
+
+            vec4 shadow_color = texture2D( shadow, f_tex_coord);
+            if( SHADOW )
+            {
+              
+               gl_FragColor = vec4( ( shadow_color.xyz ) , shadow_color.w * 0.8 ); 
+              
+            }
+            
+            else{                                                       // Compute an initial (ambient) color:
+              gl_FragColor = vec4( shape_color.xyz * ambient, shape_color.w );
+            }                                                         // Compute the final color with contributions from lights:
             gl_FragColor.xyz += phong_model_lights( normalize( N ), vertex_worldspace );
           } ` ;
     }
@@ -597,6 +618,7 @@ class Phong_Shader extends Shader
       gl.uniform1f ( gpu.diffusivity,    material.diffusivity );
       gl.uniform1f ( gpu.specularity,    material.specularity );
       gl.uniform1f ( gpu.smoothness,     material.smoothness  );
+
     }
   send_gpu_state( gl, gpu, gpu_state, model_transform )
     {                                       // send_gpu_state():  Send the state of our whole drawing context to the GPU.
@@ -627,6 +649,9 @@ class Phong_Shader extends Shader
       gl.uniform4fv( gpu.light_positions_or_vectors, light_positions_flattened );
       gl.uniform4fv( gpu.light_colors,               light_colors_flattened );
       gl.uniform1fv( gpu.light_attenuation_factors, gpu_state.lights.map( l => l.attenuation ) );
+      gl.uniform1f ( gpu.animation_time_loc, gpu_state.animation_time / 1000 );
+      
+
     }
   update_GPU( context, gpu_addresses, gpu_state, model_transform, material )
     {             // update_GPU(): Define how to synchronize our JavaScript's variables to the GPU's.  This is where the shader 
@@ -638,11 +663,49 @@ class Phong_Shader extends Shader
                   // Fill in any missing fields in the Material object with custom defaults for this shader:
       const defaults = { color: color( 0,0,0,1 ), ambient: 0, diffusivity: 1, specularity: 1, smoothness: 40 };
       material = Object.assign( {}, defaults, material );
+      context.uniform1f ( gpu_addresses.animation_time, gpu_state.animation_time / 1000 );
+
+      if( gpu_state.gouraud === undefined ) { gpu_state.gouraud = gpu_state.color_normals = false; }    // Keep the flags seen by the shader 
+      context.uniform1i( gpu_addresses.GOURAUD_loc,        gpu_state.gouraud);                // program up-to-date and make sure 
+      context.uniform1i( gpu_addresses.COLOR_NORMALS_loc,  gpu_state.color_normals );                              // they are declared.
+
+      const textures = [];
+      let textureIndex = 0;
+
+      if (material.shadow ) 
+        { 
+          //gpu_addresses.shader_attributes["tex_coord"].enabled = true;
+          gpu_state.shadow = true;
+           
+//           gl.activeTexture(gl.TEXTURE0);
+          context.bindTexture(context.TEXTURE_2D, material.shadow.id);
+          textures.push(material.shadow.id);
+          //gl.bindTexture( gl.TEXTURE_2D, material.shadow.id );
+
+          context.uniform1i(gpu_addresses.shadow_loc, textureIndex++);  // texture unit 0
+        }
+      else 
+        { 
+         gpu_state.shadow = false; 
+        }
+
+      context.uniform1i( gpu_addresses.SHADOW_loc, gpu_state.shadow);
 
       this.send_material ( context, gpu_addresses, material );
+
+      textureIndex = 0;
+
+      if (material.shadow) {
+          context.activeTexture(context.TEXTURE0 + textureIndex);
+          context.bindTexture(context.TEXTURE_2D, textures[textureIndex++]);
+      }
+
       this.send_gpu_state( context, gpu_addresses, gpu_state, model_transform );
     }
+
 }
+
+
 
 
 const Textured_Phong = defs.Textured_Phong =
@@ -652,7 +715,7 @@ class Textured_Phong extends Phong_Shader
                         // coordinates that are stored at each shape vertex.
   vertex_glsl_code()           // ********* VERTEX SHADER *********
     { return this.shared_glsl_code() + `
-        varying vec2 f_tex_coord;
+        
         attribute vec3 position, normal;                            // Position is expressed in object coordinates.
         attribute vec2 texture_coord;
         
@@ -674,7 +737,7 @@ class Textured_Phong extends Phong_Shader
     {                          // A fragment is a pixel that's overlapped by the current triangle.
                                // Fragments affect the final image or get discarded due to depth.                                
       return this.shared_glsl_code() + `
-        varying vec2 f_tex_coord;
+       
         uniform sampler2D texture;
 
         void main()
@@ -700,6 +763,40 @@ class Textured_Phong extends Phong_Shader
     }
 }
 
+const Texture_Scroll_Y = defs.Texture_Scroll_Y =
+class Texture_Scroll_Y extends Textured_Phong
+{ 
+
+    fragment_glsl_code()           // ********* FRAGMENT SHADER ********* 
+    {
+      // TODO:  Modify the shader below (right now it's just the same fragment shader as Phong_Shader) for requirement #6.
+      return this.shared_glsl_code() + `
+        //varying vec2 f_tex_coord;
+        uniform sampler2D texture;
+        void main()
+        {   
+
+          /* 2D translation matrix */
+          float theta = animation_time;
+          mat4 tr = mat4(1,0,0,0,0,1,0,0,0,0,1,0,0,theta,0,1);
+
+          float t = 2.0;
+
+          vec4 coord = tr * (vec4(f_tex_coord[0], f_tex_coord[1],0,0) - t) + t;
+          
+
+          vec2 xy = vec2(coord[0],coord[1]);
+
+          vec4 tex_color = texture2D(texture, xy);      // Compute an initial (ambient) color:
+
+
+          gl_FragColor = vec4( ( tex_color.xyz + shape_color.xyz ) * ambient, shape_color.w * tex_color.w ); 
+          
+          gl_FragColor.xyz += phong_model_lights( N, vertex_worldspace );                     // Compute the final color with contributions from lights.
+        }`;
+    }
+}
+
 
 const Fake_Bump_Map = defs.Fake_Bump_Map =
 class Fake_Bump_Map extends Textured_Phong
@@ -708,7 +805,7 @@ class Fake_Bump_Map extends Textured_Phong
   fragment_glsl_code()
     {                            // ********* FRAGMENT SHADER ********* 
       return this.shared_glsl_code() + `
-        varying vec2 f_tex_coord;
+        //varying vec2 f_tex_coord;
         uniform sampler2D texture;
 
         void main()
