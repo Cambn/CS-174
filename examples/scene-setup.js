@@ -209,10 +209,26 @@ export class Scene_Setup extends Scene
          this.correct = true;
          this.blood = 3;
 
+         this.selected = 0;
+         this.progress = 0;
+         this.input = -1;
+         this.choice = -1;
+
       }
 
       make_control_panel(){
           this.key_triggered_button( "Start Game", [ "Enter" ], function() { this.game_started = 1; } );
+          this.new_line();
+          this.key_triggered_button("Choose Left", ["j"], function () {
+              this.selected = 1;
+              this.input = 0;
+          });
+          this.new_line();
+          this.key_triggered_button("Choose Right", ["k"], function () {
+              this.selected = 1;
+              this.input = 1;
+          });
+          this.new_line();
           this.new_line();
           this.key_triggered_button("View room", ["0"], () => this.attached = () => this.initial_camera_location);
           this.new_line();
@@ -330,6 +346,142 @@ export class Scene_Setup extends Scene
               this.shapes.text.draw(context, program_state, text_transform, this.materials.text_image);
           }
 
+          // gameplay starts
+          if (this.game_started && this.progress === 0 && t > (this.timestamp + 12000)) {
+              desired = this.initial_camera_location.times(Mat4.translation(0,2,20));
+              let mystring = "Choose which TA to save (first?)\n";
+              let text_transform = Mat4.identity();
+              text_transform = text_transform.times(Mat4.scale(0.1,0.1,0.1));
+              text_transform = text_transform.times(Mat4.translation(-43,-40,50));
+              this.shapes.text.set_string(mystring, context.context);
+              this.shapes.text.draw(context, program_state, text_transform, this.materials.text_image);
+
+              mystring = "Choose Left (j)\n";
+              text_transform = Mat4.identity();
+              text_transform = text_transform.times(Mat4.scale(0.1,0.1,0.1));
+              text_transform = text_transform.times(Mat4.translation(-45,-45,50));
+              this.shapes.text.set_string(mystring, context.context);
+              this.shapes.text.draw(context, program_state, text_transform, this.materials.text_image);
+
+              mystring = "Choose Right (k)\n";
+              text_transform = Mat4.identity();
+              text_transform = text_transform.times(Mat4.scale(0.1,0.1,0.1));
+              text_transform = text_transform.times(Mat4.translation(-15,-45,50));
+              this.shapes.text.set_string(mystring, context.context);
+              this.shapes.text.draw(context, program_state, text_transform, this.materials.text_image);
+
+              if (this.selected) {
+                  this.progress += 1;
+                  this.selected = 0;
+                  this.choice = this.input;
+              }
+          }
+
+          if (this.game_started && this.progress === 1) {
+              if (!this.choice) {
+                  desired = this.TA_1.times(Mat4.translation(0,0,-1));
+                  let mystring = "Do you want to change your choice?\n";
+                  let text_transform = Mat4.identity();
+                  text_transform = text_transform.times(Mat4.scale(0.1,0.1,0.1));
+                  text_transform = text_transform.times(Mat4.translation(-55,-20,9));
+                  this.shapes.text.set_string(mystring, context.context);
+                  this.shapes.text.draw(context, program_state, text_transform, this.materials.text_image);
+
+                  mystring = "Yes (j)\n";
+                  text_transform = Mat4.identity();
+                  text_transform = text_transform.times(Mat4.scale(0.1,0.1,0.1));
+                  text_transform = text_transform.times(Mat4.translation(-55,-40,9));
+                  this.shapes.text.set_string(mystring, context.context);
+                  this.shapes.text.draw(context, program_state, text_transform, this.materials.text_image);
+
+                  mystring = "No (k)\n";
+                  text_transform = Mat4.identity();
+                  text_transform = text_transform.times(Mat4.scale(0.1,0.1,0.1));
+                  text_transform = text_transform.times(Mat4.translation(-30,-40,9));
+                  this.shapes.text.set_string(mystring, context.context);
+                  this.shapes.text.draw(context, program_state, text_transform, this.materials.text_image);
+
+                  if (this.selected) {
+                      this.selected = 0;
+                      this.progress += 1;
+                      if (this.input === 0) {
+                          this.choice = 1;
+                      } else {
+                          this.choice = 0;
+                      }
+                  }
+              } else {
+                  desired = this.TA_2.times(Mat4.translation(0,0,-1));
+                  let mystring = "Do you want to change your choice?\n";
+                  let text_transform = Mat4.identity();
+                  text_transform = text_transform.times(Mat4.scale(0.1,0.1,0.1));
+                  text_transform = text_transform.times(Mat4.translation(-20,-20,9));
+                  this.shapes.text.set_string(mystring, context.context);
+                  this.shapes.text.draw(context, program_state, text_transform, this.materials.text_image);
+
+                  mystring = "Yes (j)\n";
+                  text_transform = Mat4.identity();
+                  text_transform = text_transform.times(Mat4.scale(0.1,0.1,0.1));
+                  text_transform = text_transform.times(Mat4.translation(-20,-40,9));
+                  this.shapes.text.set_string(mystring, context.context);
+                  this.shapes.text.draw(context, program_state, text_transform, this.materials.text_image);
+
+                  mystring = "No (k)\n";
+                  text_transform = Mat4.identity();
+                  text_transform = text_transform.times(Mat4.scale(0.1,0.1,0.1));
+                  text_transform = text_transform.times(Mat4.translation(5,-40,9));
+                  this.shapes.text.set_string(mystring, context.context);
+                  this.shapes.text.draw(context, program_state, text_transform, this.materials.text_image);
+
+                  if (this.selected) {
+                      this.selected = 0;
+                      this.progress += 1;
+                      if (this.input === 0) {
+                          this.choice = 0;
+                      } else {
+                          this.choice = 1;
+                      }
+                  }
+              }
+          }
+
+          if (this.game_started && this.progress === 2) {
+              if (!this.choice) {
+                  desired = this.TA_1.times(Mat4.translation(0,0,-1));
+                  let mystring = "The TAs will remember your choice\n";
+                  let text_transform = Mat4.identity();
+                  text_transform = text_transform.times(Mat4.scale(0.1,0.1,0.1));
+                  text_transform = text_transform.times(Mat4.translation(-55,-20,9));
+                  this.shapes.text.set_string(mystring, context.context);
+                  this.shapes.text.draw(context, program_state, text_transform, this.materials.text_image);
+
+                  mystring = "Thank you for playing\n";
+                  text_transform = Mat4.identity();
+                  text_transform = text_transform.times(Mat4.scale(0.1,0.1,0.1));
+                  text_transform = text_transform.times(Mat4.translation(-55,-30,9));
+                  this.shapes.text.set_string(mystring, context.context);
+                  this.shapes.text.draw(context, program_state, text_transform, this.materials.text_image);
+              } else {
+                  desired = this.TA_2.times(Mat4.translation(0,0,-1));
+                  let mystring = "The TAs will remember your choice\n";
+                  let text_transform = Mat4.identity();
+                  text_transform = text_transform.times(Mat4.scale(0.1,0.1,0.1));
+                  text_transform = text_transform.times(Mat4.translation(-20,-20,9));
+                  this.shapes.text.set_string(mystring, context.context);
+                  this.shapes.text.draw(context, program_state, text_transform, this.materials.text_image);
+
+                  mystring = "Thank you for playing\n";
+                  text_transform = Mat4.identity();
+                  text_transform = text_transform.times(Mat4.scale(0.1,0.1,0.1));
+                  text_transform = text_transform.times(Mat4.translation(-20,-30,9));
+                  this.shapes.text.set_string(mystring, context.context);
+                  this.shapes.text.draw(context, program_state, text_transform, this.materials.text_image);
+              }
+          }
+
+
+
+
 
 
 
@@ -343,6 +495,8 @@ export class Scene_Setup extends Scene
 
 
           program_state.set_camera( Mat4.inverse(program_state.camera_transform) );
+
+
 
 
 
