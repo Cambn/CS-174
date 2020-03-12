@@ -339,6 +339,7 @@ export class Obj_File_Demo extends Scene
           // intro camera movements
           if (this.game_started && t < (this.timestamp + 2000)) {
               desired = this.TA_1;
+
           } else if (this.game_started && t < (this.timestamp + 4000)) {
               desired = this.TA_2;
           }
@@ -543,11 +544,13 @@ export class Obj_File_Demo extends Scene
         this.shapes.TA2_Leg.draw(context, program_state,body_transform_ta2.times(Mat4.translation(0.4, -3.5,0)), this.materials.leg_2);
 
 
+        // animation
         if (!this.game_started) {
             program_state.set_camera(this.initial_camera_location);
             this.draw_start_screen(context, program_state);
             this.timestamp = t;
         }
+
 
         var soil_transform = Mat4.translation(0, -6, -20).times(Mat4.rotation(Math.PI/2, 1, 0, 0)).times(Mat4.scale(200, 200, 200));
         this.shapes.sheet.draw(context, program_state, soil_transform, this.materials.soil);

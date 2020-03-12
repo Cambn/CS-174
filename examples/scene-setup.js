@@ -291,12 +291,45 @@ export class Scene_Setup extends Scene
           // Camera
           var desired = this.attached();
 
-          // intro camera movements
-          if (this.game_started && t < (this.timestamp + 2000)) {
+          // intro animation
+          if (this.game_started && t < (this.timestamp + 3000)) {
               desired = this.TA_1;
-          } else if (this.game_started && t < (this.timestamp + 4000)) {
+              // text
+              let mystring = "This is your first TA\n";
+              let text_transform = Mat4.identity();
+              text_transform = text_transform.times(Mat4.scale(0.1,0.1,0.1));
+              text_transform = text_transform.times(Mat4.translation(-45,-40,8));
+              this.shapes.text.set_string(mystring, context.context);
+              this.shapes.text.draw(context, program_state, text_transform, this.materials.text_image);
+          } else if (this.game_started && t < (this.timestamp + 6000)) {
               desired = this.TA_2;
+              // text
+              let mystring = "This is your second TA\n";
+              let text_transform = Mat4.identity();
+              text_transform = text_transform.times(Mat4.scale(0.1,0.1,0.1));
+              text_transform = text_transform.times(Mat4.translation(-10,-40,8));
+              this.shapes.text.set_string(mystring, context.context);
+              this.shapes.text.draw(context, program_state, text_transform, this.materials.text_image);
+          } else if (this.game_started && t < (this.timestamp + 9000)) {
+              desired = this.initial_camera_location;
+              // text
+              let mystring = "Now you must save them!\n";
+              let text_transform = Mat4.identity();
+              text_transform = text_transform.times(Mat4.scale(0.1,0.1,0.1));
+              text_transform = text_transform.times(Mat4.translation(-35,-10,220));
+              this.shapes.text.set_string(mystring, context.context);
+              this.shapes.text.draw(context, program_state, text_transform, this.materials.text_image);
+          } else if (this.game_started && t < (this.timestamp + 12000)) {
+              desired = this.initial_camera_location;
+              // text
+              let mystring = "by winning their hearts!!\n";
+              let text_transform = Mat4.identity();
+              text_transform = text_transform.times(Mat4.scale(0.1,0.1,0.1));
+              text_transform = text_transform.times(Mat4.translation(-37,-10,220));
+              this.shapes.text.set_string(mystring, context.context);
+              this.shapes.text.draw(context, program_state, text_transform, this.materials.text_image);
           }
+
 
 
 
