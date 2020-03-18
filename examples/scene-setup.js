@@ -141,7 +141,7 @@ export class Scene_Setup extends Scene
             "flag": new Shape_From_File("assets/uclaFlag2.obj"),
             "flag_pole": new Shape_From_File("assets/uclaFlag1.obj"),
             "flag_UCLA": new Shape_From_File("assets/uclaFlag3.obj"),
-            "text": new Text_Line( 35 ),
+            "text": new Text_Line( 50 ),
             "square": new defs.Square(),
             "sheet" : new defs.Grid_Patch( 100, 100, row_operation, column_operation ),
             "sheet2" : new defs.Grid_Patch( 3, 3, row_operation, column_operation ),
@@ -206,13 +206,34 @@ export class Scene_Setup extends Scene
          this.game_started = 0;
          this.timestamp = 0;
 
-         this.correct = true;
-         this.blood = 3;
+         this.desired = this.attached();
+         this.TA_trans = Mat4.identity();
+
+         this.correct = -1;
+         this.blood = -1;
+
+         this.selected = false;
+         this.progress = 0;
+         this.input = -1;
+         this.choice = -1;
+
+         this.TA = -1;
 
       }
 
       make_control_panel(){
           this.key_triggered_button( "Start Game", [ "Enter" ], function() { this.game_started = 1; } );
+          this.new_line();
+          this.key_triggered_button("Choose Left", ["j"], function () {
+              this.selected = true;
+              this.input = false;
+          });
+          this.new_line();
+          this.key_triggered_button("Choose Right", ["k"], function () {
+              this.selected = true;
+              this.input = true;
+          });
+          this.new_line();
           this.new_line();
           this.key_triggered_button("View room", ["0"], () => this.attached = () => this.initial_camera_location);
           this.new_line();
@@ -235,6 +256,7 @@ export class Scene_Setup extends Scene
         })
       };
 
+
     draw_blood(context, program_state, transform, blood){
 
           
@@ -253,7 +275,7 @@ export class Scene_Setup extends Scene
                 }
 
           }
-          else{
+          else if (blood == 0){
                let my_string = "Game Over";
                let title_scale = 0.02;
                this.shapes.gameover.set_string(my_string, context.context);
@@ -289,23 +311,457 @@ export class Scene_Setup extends Scene
               this.children.push( context.scratchpad.controls = new defs.Movement_Controls() );
 
           // Camera
-          var desired = this.attached();
+          var TA1_text_trans = Mat4.scale(0.1,0.1,0.1).times(Mat4.translation(-55,-20,9));
+          var TA2_text_trans = Mat4.scale(0.1,0.1,0.1).times(Mat4.translation(-20,-20,9));
+          
+           // intro animation
+          if (this.game_started && t < (this.timestamp + 3000)) {
+              this.desired = this.TA_1;
+              // text
+              let mystring = "This is your first TA\n";
+              let text_transform = Mat4.identity();
+              text_transform = text_transform.times(Mat4.scale(0.1,0.1,0.1));
+              text_transform = text_transform.times(Mat4.translation(-45,-40,8));
+              this.shapes.text.set_string(mystring, context.context);
+              this.shapes.text.draw(context, program_state, text_transform, this.materials.text_image);
+          } else if (this.game_started && t < (this.timestamp + 6000)) {
+              this.desired = this.TA_2;
+              // text
+              let mystring = "This is your second TA\n";
+              let text_transform = Mat4.identity();
+              text_transform = text_transform.times(Mat4.scale(0.1,0.1,0.1));
+              text_transform = text_transform.times(Mat4.translation(-10,-40,8));
+              this.shapes.text.set_string(mystring, context.context);
+              this.shapes.text.draw(context, program_state, text_transform, this.materials.text_image);
+          } else if (this.game_started && t < (this.timestamp + 9000)) {
+              this.desired = this.initial_camera_location;
+              // text
+              let mystring = "Now you must save them!\n";
+              let text_transform = Mat4.identity();
+              text_transform = text_transform.times(Mat4.scale(0.1,0.1,0.1));
+              text_transform = text_transform.times(Mat4.translation(-35,-10,220));
+              this.shapes.text.set_string(mystring, context.context);
+              this.shapes.text.draw(context, program_state, text_transform, this.materials.text_image);
+          } else if (this.game_started && t < (this.timestamp + 12000)) {
+              this.desired = this.initial_camera_location;
+              // text
+              let mystring = "by winning their hearts!!\n";
+              let text_transform = Mat4.identity();
+              text_transform = text_transform.times(Mat4.scale(0.1,0.1,0.1));
+              text_transform = text_transform.times(Mat4.translation(-37,-10,220));
+              this.shapes.text.set_string(mystring, context.context);
+              this.shapes.text.draw(context, program_state, text_transform, this.materials.text_image);
+          }
 
-          // intro camera movements
-          if (this.game_started && t < (this.timestamp + 2000)) {
-              desired = this.TA_1;
-          } else if (this.game_started && t < (this.timestamp + 4000)) {
-              desired = this.TA_2;
+          // gameplay starts
+          if (this.game_started && this.progress === 0 && t > (this.timestamp + 12000)) {
+              this.desired = this.initial_camera_location.times(Mat4.translation(0,2,20));
+              let mystring = "Choose which TA to save (first?)\n";
+              let text_transform = Mat4.identity();
+              text_transform = text_transform.times(Mat4.scale(0.1,0.1,0.1));
+              text_transform = text_transform.times(Mat4.translation(-43,-40,50));
+              this.shapes.text.set_string(mystring, context.context);
+              this.shapes.text.draw(context, program_state, text_transform, this.materials.text_image);
+
+              mystring = "Choose Left (j)\n";
+              text_transform = Mat4.identity();
+              text_transform = text_transform.times(Mat4.scale(0.1,0.1,0.1));
+              text_transform = text_transform.times(Mat4.translation(-45,-45,50));
+              this.shapes.text.set_string(mystring, context.context);
+              this.shapes.text.draw(context, program_state, text_transform, this.materials.text_image);
+
+              mystring = "Choose Right (k)\n";
+              text_transform = Mat4.identity();
+              text_transform = text_transform.times(Mat4.scale(0.1,0.1,0.1));
+              text_transform = text_transform.times(Mat4.translation(-15,-45,50));
+              this.shapes.text.set_string(mystring, context.context);
+              this.shapes.text.draw(context, program_state, text_transform, this.materials.text_image);
+
+              if (this.selected) {
+                  this.progress += 1;
+                  this.selected = false;
+                  this.choice = this.input;
+                  this.TA = this.input;
+                  this.blood = 3;
+              }
+          }
+
+          if (this.game_started && this.progress === 1) {
+              if (!this.TA) {
+                      this.desired = this.TA_1.times(Mat4.translation(0,0,-1));
+                      this.TA_trans = TA1_text_trans;
+              }
+              else{
+                      this.desired = this.TA_2.times(Mat4.translation(0,0,-1));
+                      this.TA_trans = TA2_text_trans;
+              }
+
+              let mystring = "Do you want to change your choice?\n";
+                 
+              this.shapes.text.set_string(mystring, context.context);
+              this.shapes.text.draw(context, program_state, this.TA_trans, this.materials.text_image);
+
+              mystring = "Yes (j)\n";
+              this.shapes.text.set_string(mystring, context.context);
+              this.shapes.text.draw(context, program_state, this.TA_trans.times(Mat4.translation(0,-20,0)), this.materials.text_image);
+
+              mystring = "No (k)\n";
+              this.shapes.text.set_string(mystring, context.context);
+              this.shapes.text.draw(context, program_state, this.TA_trans.times(Mat4.translation(25,-20,0)), this.materials.text_image);
+
+              if (this.selected) {
+                      this.selected = false;
+                      this.progress += 1;
+
+                      if (this.input === false) {
+                          this.choice = true;
+                          
+                          this.TA = !this.TA;
+                      } 
+                      else {
+                          this.choice = false;
+                      }
+              }
+              
+          }
+          
+
+          if (this.game_started && this.progress === 2){
+                if(!this.TA){
+                      this.desired = this.TA_1.times(Mat4.translation(0,0,-1));
+                      this.TA_trans = TA1_text_trans;
+                }
+                else{
+                      this.desired = this.TA_2.times(Mat4.translation(0,0,-1));
+                      this.TA_trans = TA2_text_trans;
+                }
+                let mystring = "So I will ask you a few questions...\n";
+                this.shapes.text.set_string(mystring, context.context);
+                this.shapes.text.draw(context, program_state, this.TA_trans, this.materials.text_image);
+
+                mystring = "( Press K to continue... )\n";
+                this.shapes.text.set_string(mystring, context.context);
+                this.shapes.text.draw(context, program_state, this.TA_trans.times(Mat4.translation(0,-10,0)), this.materials.text_image);
+
+                if (this.selected) {
+                      this.selected = false;
+                      this.progress += 1;
+                }
+          }
+
+          if (this.game_started && this.blood == 0) {
+              if (!this.TA) {
+                  this.desired = this.TA_1.times(Mat4.translation(0,0,-1));
+                  this.TA_trans = TA1_text_trans;
+                  let mystring = "You failed to save your TA! \n";
+                  this.shapes.text.set_string(mystring, context.context);
+                  this.shapes.text.draw(context, program_state, this.TA_trans, this.materials.text_image);
+
+                  mystring = "Thank you for playing\n";
+                  this.shapes.text.set_string(mystring, context.context);
+                  this.shapes.text.draw(context, program_state, this.TA_trans.times(Mat4.translation(0,-20,0)), this.materials.text_image);
+              } 
+              else {
+                  this.desired = this.TA_2.times(Mat4.translation(0,0,-1));
+                  this.TA_trans = TA2_text_trans;
+                  let mystring = "You failed to save your TA! \n";
+                  this.shapes.text.set_string(mystring, context.context);
+                  this.shapes.text.draw(context, program_state, this.TA_trans, this.materials.text_image);
+
+                  mystring = "Thank you for playing\n";
+                  this.shapes.text.set_string(mystring, context.context);
+                  this.shapes.text.draw(context, program_state, this.TA_trans.times(Mat4.translation(0,-20,0)), this.materials.text_image);
+              }
+          }
+
+          if (this.game_started && this.progress === 3 && this.blood > 0){
+                if(!this.TA){
+                      this.desired = this.TA_1.times(Mat4.translation(0,0,-1));
+                      this.TA_trans = TA1_text_trans;
+                }
+                else{
+                      this.desired = this.TA_2.times(Mat4.translation(0,0,-1));
+                      this.TA_trans = TA2_text_trans;
+                }
+                let mystring = "What is my full name?\n";
+                this.shapes.text.set_string(mystring, context.context);
+                this.shapes.text.draw(context, program_state, this.TA_trans, this.materials.text_image);
+
+                mystring = "Yunqi Guo (j)\n";
+                this.shapes.text.set_string(mystring, context.context);
+                this.shapes.text.draw(context, program_state, this.TA_trans.times(Mat4.translation(0,-20,0)), this.materials.text_image);
+
+                mystring = "Tianqi Wu (k)\n";
+                this.shapes.text.set_string(mystring, context.context);
+                this.shapes.text.draw(context, program_state, this.TA_trans.times(Mat4.translation(25,-20,0)), this.materials.text_image);
+                
+                if (this.selected) {
+                      this.selected = false;
+                      this.progress += 1;
+                      if (this.input === false) {
+                          this.choice = false;
+                          this.correct = true;
+                      } else {
+                          this.choice = true;
+                          this.correct = false;
+                          this.blood -= 1;
+                      }
+                 }
+          }
+
+          if (this.game_started && this.progress === 4 && this.blood > 0){
+                if(!this.TA){
+                      this.desired = this.TA_1.times(Mat4.translation(0,0,-1));
+                      this.TA_trans = TA1_text_trans;
+                }
+                else{
+                      this.desired = this.TA_2.times(Mat4.translation(0,0,-1));
+                      this.TA_trans = TA2_text_trans;
+                }
+                let mystring = "When was orthographic projection first introduced?\n";
+                this.shapes.text.set_string(mystring, context.context);
+                this.shapes.text.draw(context, program_state, this.TA_trans.times(Mat4.translation(-11,0,0)), this.materials.text_image);
+
+
+                mystring = "1900 B.C. (j)\n";
+                this.shapes.text.set_string(mystring, context.context);
+                this.shapes.text.draw(context, program_state, this.TA_trans.times(Mat4.translation(0,-20,0)), this.materials.text_image);
+
+                mystring = "2000 B.C. (k)\n";
+                this.shapes.text.set_string(mystring, context.context);
+                this.shapes.text.draw(context, program_state, this.TA_trans.times(Mat4.translation(25,-20,0)), this.materials.text_image);
+                
+                if (this.selected) {
+                      this.selected = false;
+                      this.progress += 1;
+                      if (this.input === false) {
+                          this.choice = false;
+                          this.correct = false;
+                          this.blood -= 1;
+                      } else {
+                          this.choice = true;
+                          this.correct = true;
+                      }
+                 }
+          }
+          if (this.game_started && this.progress === 5 && this.blood > 0){
+                if(!this.TA){
+                      this.desired = this.TA_1.times(Mat4.translation(0,0,-1));
+                      this.TA_trans = TA1_text_trans;
+                }
+                else{
+                      this.desired = this.TA_2.times(Mat4.translation(0,0,-1));
+                      this.TA_trans = TA2_text_trans;
+                }
+                let mystring = "Which company produced Luxo Jr.?\n";
+                this.shapes.text.set_string(mystring, context.context);
+                this.shapes.text.draw(context, program_state, this.TA_trans, this.materials.text_image);
+
+
+                mystring = "Disney (j)\n";
+                this.shapes.text.set_string(mystring, context.context);
+                this.shapes.text.draw(context, program_state, this.TA_trans.times(Mat4.translation(0,-20,0)), this.materials.text_image);
+
+                mystring = "Pixar (k)\n";
+                this.shapes.text.set_string(mystring, context.context);
+                this.shapes.text.draw(context, program_state, this.TA_trans.times(Mat4.translation(25,-20,0)), this.materials.text_image);
+                
+                if (this.selected) {
+                      this.selected = false;
+                      this.progress += 1;
+                      if (this.input === false) {
+                          this.choice = false;
+                          this.correct = false;
+                          this.blood -= 1;
+                      } else {
+                          this.choice = true;
+                          this.correct = true;
+                      }
+                 }
+          }
+          if (this.game_started && this.progress === 6 && this.blood > 0){
+                if(!this.TA){
+                      this.desired = this.TA_1.times(Mat4.translation(0,0,-1));
+                      this.TA_trans = TA1_text_trans;
+                }
+                else{
+                      this.desired = this.TA_2.times(Mat4.translation(0,0,-1));
+                      this.TA_trans = TA2_text_trans;
+                }
+                let mystring = "When was the coordinate system introduced?\n";
+                this.shapes.text.set_string(mystring, context.context);
+                this.shapes.text.draw(context, program_state, this.TA_trans.times(Mat4.translation(-5,0,0)), this.materials.text_image);
+
+
+                mystring = "16th Century (j)\n";
+                this.shapes.text.set_string(mystring, context.context);
+                this.shapes.text.draw(context, program_state, this.TA_trans.times(Mat4.translation(0,-20,0)), this.materials.text_image);
+
+                mystring = "17th Century (k)\n";
+                this.shapes.text.set_string(mystring, context.context);
+                this.shapes.text.draw(context, program_state, this.TA_trans.times(Mat4.translation(25,-20,0)), this.materials.text_image);
+                
+                if (this.selected) {
+                      this.selected = false;
+                      this.progress += 1;
+                      if (this.input === false) {
+                          this.choice = false;
+                          this.correct = false;
+                          this.blood -= 1;
+                      } else {
+                          this.choice = true;
+                          this.correct = true;
+                      }
+                 }
+          }
+
+          if (this.game_started && this.progress === 7 && this.blood > 0){
+                if(!this.TA){
+                      this.desired = this.TA_1.times(Mat4.translation(0,0,-1));
+                      this.TA_trans = TA1_text_trans;
+                }
+                else{
+                      this.desired = this.TA_2.times(Mat4.translation(0,0,-1));
+                      this.TA_trans = TA2_text_trans;
+                }
+                let mystring = "When was the term Computer Graphics first stated?\n";
+                this.shapes.text.set_string(mystring, context.context);
+                this.shapes.text.draw(context, program_state, this.TA_trans, this.materials.text_image);
+
+                mystring = "1960's (j)\n";
+                this.shapes.text.set_string(mystring, context.context);
+                this.shapes.text.draw(context, program_state, this.TA_trans.times(Mat4.translation(0,-20,0)), this.materials.text_image);
+
+                mystring = "1950's (k)\n";
+                this.shapes.text.set_string(mystring, context.context);
+                this.shapes.text.draw(context, program_state, this.TA_trans.times(Mat4.translation(25,-20,0)), this.materials.text_image);
+                
+                if (this.selected) {
+                      this.selected = false;
+                      this.progress += 1;
+                      if (this.input === false) {
+                          this.choice = false;
+                          this.correct = true;
+                      } else {
+                          this.choice = true;
+                          this.correct = false;
+                          this.blood -= 1;
+                      }
+                 }
+          }
+
+          if (this.game_started && this.progress === 8 && this.blood > 0){
+                if(!this.TA){
+                      this.desired = this.TA_1.times(Mat4.translation(0,0,-1));
+                      this.TA_trans = TA1_text_trans;
+                }
+                else{
+                      this.desired = this.TA_2.times(Mat4.translation(0,0,-1));
+                      this.TA_trans = TA2_text_trans;
+                }
+                let mystring = "What was the best selling game of all times?\n";
+                this.shapes.text.set_string(mystring, context.context);
+                this.shapes.text.draw(context, program_state, this.TA_trans, this.materials.text_image);
+
+                mystring = "Tetris (j)\n";
+                this.shapes.text.set_string(mystring, context.context);
+                this.shapes.text.draw(context, program_state, this.TA_trans.times(Mat4.translation(0,-20,0)), this.materials.text_image);
+
+                mystring = "Super Mario (k)\n";
+                this.shapes.text.set_string(mystring, context.context);
+                this.shapes.text.draw(context, program_state, this.TA_trans.times(Mat4.translation(25,-20,0)), this.materials.text_image);
+                
+                if (this.selected) {
+                      this.selected = false;
+                      this.progress += 1;
+                      if (this.input === false) {
+                          this.choice = false;
+                          this.correct = true;
+                      } else {
+                          this.choice = true;
+                          this.correct = false;
+                          this.blood -= 1;
+                      }
+                 }
+          }
+
+          if (this.game_started && this.progress === 9 && this.blood > 0){
+                if(!this.TA){
+                      this.desired = this.TA_1.times(Mat4.translation(0,0,-1));
+                      this.TA_trans = TA1_text_trans;
+                }
+                else{
+                      this.desired = this.TA_2.times(Mat4.translation(0,0,-1));
+                      this.TA_trans = TA2_text_trans;
+                }
+                let mystring = "Am I hot?\n";
+                this.shapes.text.set_string(mystring, context.context);
+                this.shapes.text.draw(context, program_state, this.TA_trans, this.materials.text_image);
+
+                mystring = "You bet! (j)\n";
+                this.shapes.text.set_string(mystring, context.context);
+                this.shapes.text.draw(context, program_state, this.TA_trans.times(Mat4.translation(0,-20,0)), this.materials.text_image);
+
+                mystring = "Absolutely! (k)\n";
+                this.shapes.text.set_string(mystring, context.context);
+                this.shapes.text.draw(context, program_state, this.TA_trans.times(Mat4.translation(25,-20,0)), this.materials.text_image);
+                
+                if (this.selected) {
+                      this.selected = false;
+                      this.progress += 1;
+                      if (this.input === false) {
+                          this.choice = false;
+                          this.correct = true;
+                      } else {
+                          this.choice = true;
+                          this.correct = true;
+                      }
+                 }
+          }
+
+          if (this.game_started && (this.progress === 10)) {
+              if (!this.TA) {
+                  this.desired = this.TA_1.times(Mat4.translation(0,0,-1));
+                  let mystring = "Congratulations! You saved your TA.\n";
+                  let text_transform = Mat4.identity();
+                  text_transform = text_transform.times(Mat4.scale(0.1,0.1,0.1));
+                  text_transform = text_transform.times(Mat4.translation(-55,-20,9));
+                  this.shapes.text.set_string(mystring, context.context);
+                  this.shapes.text.draw(context, program_state, text_transform, this.materials.text_image);
+
+                  mystring = "Thank you for playing!\n";
+                  text_transform = Mat4.identity();
+                  text_transform = text_transform.times(Mat4.scale(0.1,0.1,0.1));
+                  text_transform = text_transform.times(Mat4.translation(-55,-30,9));
+                  this.shapes.text.set_string(mystring, context.context);
+                  this.shapes.text.draw(context, program_state, text_transform, this.materials.text_image);
+              } 
+              else {
+                  this.desired = this.TA_2.times(Mat4.translation(0,0,-1));
+                  let mystring = "Congratulations! You saved your TA.";
+                  let text_transform = Mat4.identity();
+                  text_transform = text_transform.times(Mat4.scale(0.1,0.1,0.1));
+                  text_transform = text_transform.times(Mat4.translation(-20,-20,9));
+                  this.shapes.text.set_string(mystring, context.context);
+                  this.shapes.text.draw(context, program_state, text_transform, this.materials.text_image);
+
+                  mystring = "Thank you for playing!\n";
+                  text_transform = Mat4.identity();
+                  text_transform = text_transform.times(Mat4.scale(0.1,0.1,0.1));
+                  text_transform = text_transform.times(Mat4.translation(-20,-30,9));
+                  this.shapes.text.set_string(mystring, context.context);
+                  this.shapes.text.draw(context, program_state, text_transform, this.materials.text_image);
+              }
           }
 
 
 
-          if (desired === this.initial_camera_location){
-              program_state.camera_transform = Mat4.inverse(desired).map((x, idx) => Vector.from(program_state.camera_transform[idx]).mix(x, 0.1))
+          if (this.desired === this.initial_camera_location){
+              program_state.camera_transform = Mat4.inverse(this.desired).map((x, idx) => Vector.from(program_state.camera_transform[idx]).mix(x, 0.1))
           }
           else {
-              desired = desired.times(Mat4.translation(0, 0, -5));
-              program_state.camera_transform = Mat4.inverse(desired).map((x, idx) => Vector.from(program_state.camera_transform[idx]).mix(x, .1));
+              this.desired = this.desired.times(Mat4.translation(0, 0, -5));
+              program_state.camera_transform = Mat4.inverse(this.desired).map((x, idx) => Vector.from(program_state.camera_transform[idx]).mix(x, .1));
           }
 
 
@@ -319,7 +775,7 @@ export class Scene_Setup extends Scene
 
 
         // TA 1 transform
-        var blood_transform = Mat4.scale(0.2,0.2,0.2).times(Mat4.translation(-18, -4.5, 0));
+        
 
 
         var body_transform = Mat4.translation(-3, -3.8, 0)
@@ -331,18 +787,18 @@ export class Scene_Setup extends Scene
                 .times(body_transform)
                 .times(Mat4.scale(1.2,1.2,1.2));
 
+        if (!this.TA){
+              if (this.correct == true){
+                    body_transform = Mat4.translation(0, (0.5*Math.abs(Math.sin(Math.PI*t/500))), 0).times(body_transform);
+                    head_transform = Mat4.translation(0, 1, 0)
+                      .times(body_transform)
+                      .times(Mat4.scale(1.2,1.2,1.2));
+              }
+              else if (this.correct == false){
+                    head_transform = head_transform.times(Mat4.rotation(Math.sin(Math.PI*t/350),0,1,0));
 
-        if (this.correct == true){
-              body_transform = Mat4.translation(0, (0.5*Math.abs(Math.sin(Math.PI*t/500))), 0).times(body_transform);
-              head_transform = Mat4.translation(0, 1, 0)
-                .times(body_transform)
-                .times(Mat4.scale(1.2,1.2,1.2));
+              }
         }
-        else{
-              head_transform = head_transform.times(Mat4.rotation(Math.sin(Math.PI*t/350),0,1,0));
-
-        }
-
         var model_transform2 = Mat4.translation(-0.1,0.6,0.2)
                 .times(head_transform);
 
@@ -389,21 +845,39 @@ export class Scene_Setup extends Scene
 
         // TA 2 Transform
 
+
+
         var head_transform_ta2 = Mat4.translation(0, -3, 0)
             //.times(Mat4.rotation(Math.PI*2, 0,1,0))
             .times(Mat4.scale(0.6,0.6,0.6));
 
-        var model_transform2_ta2 = Mat4.translation(0,-2.2,0)
-            //.times(Mat4.rotation(Math.PI*2, 0,1,0))
-            .times(Mat4.scale(0.5,0.5,0.5));
+        
 
-        var glass_transform_ta2 = Mat4.translation(0, -2.9, 0.2)
-            //.times(Mat4.rotation(Math.PI*2, 0,1,0))
-            .times(Mat4.scale(0.5,0.5,0.5));
 
         var body_transform_ta2 = Mat4.translation(0, -3.85, 0)
             //.times(Mat4.rotation(Math.PI, 0,1,0))
             .times(Mat4.scale(0.5,0.5,0.5));
+
+        if (this.TA){
+              if (this.correct == true){
+                    body_transform_ta2 = Mat4.translation(0, (0.5*Math.abs(Math.sin(Math.PI*t/500))), 0).times(body_transform_ta2);
+                    head_transform_ta2 = Mat4.translation(0, 1, 0)
+                      .times(body_transform_ta2)
+                      .times(Mat4.scale(1.2,1.2,1.2));
+              }
+              else if (this.correct == -1){}
+              else{
+                    head_transform_ta2 = head_transform_ta2.times(Mat4.rotation(Math.sin(Math.PI*t/350),0,1,0));
+
+              }
+        }
+
+        var model_transform2_ta2 = Mat4.translation(0,0.8,0)
+                .times(head_transform_ta2).times(Mat4.scale(0.9,0.9,0.9));
+
+        var glass_transform_ta2 = Mat4.translation(0, 0.1, 0.2)
+            .times(head_transform_ta2)
+            .times(Mat4.scale(0.84,0.84,0.84));
 
         //var right_arm_ta2 = body_transform_ta2.times(Mat4.translation(-1.2,-0.7,-0.5)).times(Mat4.rotation(Math.sin(Math.PI*t/300)/2, 1,0,0));
         var left_arm_ta2 = body_transform_ta2.times(Mat4.translation(1.2,-0.7,-0.5));
@@ -422,7 +896,13 @@ export class Scene_Setup extends Scene
               right_hand_ta2 = right_hand_ta2.times(Mat4.rotation(-Math.abs(Math.sin(Math.PI*t/200)/4), 1,0,0))
             .times(Mat4.translation(-2.4, -18.4, -0.8));
         }
-        this.TA_2 = Mat4.inverse(head_transform_ta2.times(Mat4.translation(1.5,0,0)));
+        
+        this.TA_2 = Mat4.inverse(Mat4.translation(0, -2.7, 0.2));
+        this.TA_2_side = Mat4.inverse(Mat4.translation(0, 1, 0)
+                .times((Mat4.translation(0, -3.8, 0)
+            .times(Mat4.rotation(-Math.PI*3/2, 0,1,0))
+            .times(Mat4.scale(0.5,0.5,0.5))))
+                .times(Mat4.scale(1.2,1.2,1.2)).times(Mat4.translation(-7,0,7)));
 
 
 
@@ -483,7 +963,15 @@ export class Scene_Setup extends Scene
         this.shapes.TA1_Leg.draw(context, program_state,body_transform.times(Mat4.translation(0, -3.7,-0.4)), this.materials.body);
         // this.shapes.TA1_Shoes.draw(context, program_state,body_transform.times(Mat4.translation(0.7, -4.7,-0.4).times(Mat4.scale(0.8,0.8,0.8))), this.materials.skin);
         // this.shapes.TA1_Shoes.draw(context, program_state,body_transform.times(Mat4.translation(0.7, -4.7,0.4).times(Mat4.scale(0.8,0.8,0.8))), this.materials.skin);
-        this.draw_blood(context,program_state,blood_transform,this.blood);
+        
+        var blood_transform = Mat4.scale(0.2,0.2,0.2);
+        if (!this.TA){
+              blood_transform = blood_transform.times(Mat4.translation(-18, -4.5, 0));
+        }    
+        else{
+              blood_transform = blood_transform.times(Mat4.translation(-3, -4.5, 0));
+        }
+        if (this.TA != -1) this.draw_blood(context,program_state,blood_transform,this.blood);
 
 
         this.shapes.TA2_hair.draw( context, program_state, model_transform2_ta2, this.materials.hair_2);
@@ -492,8 +980,8 @@ export class Scene_Setup extends Scene
         this.shapes.TA2_Body.draw(context, program_state,body_transform_ta2, this.materials.body);
         this.shapes.TA2_Arm.draw(context, program_state,right_arm_ta2, this.materials.body);
         this.shapes.TA2_Arm.draw(context, program_state,left_arm_ta2, this.materials.body);
-        this.shapes.TA2_Hand.draw(context, program_state, right_hand_ta2, this.materials.skin);
-        this.shapes.TA2_Hand.draw(context, program_state, left_arm_ta2.times(Mat4.translation(0,-1,1).times(Mat4.scale(0.5,0.5,0.5))), this.materials.skin);
+        this.shapes.TA2_Hand.draw(context, program_state, right_hand_ta2, this.materials.skin_2);
+        this.shapes.TA2_Hand.draw(context, program_state, left_arm_ta2.times(Mat4.translation(0,-1,1).times(Mat4.scale(0.5,0.5,0.5))), this.materials.skin_2);
         this.shapes.TA2_Leg.draw(context, program_state,body_transform_ta2.times(Mat4.translation(-0.4, -3.5,0)), this.materials.leg_2);
         this.shapes.TA2_Leg.draw(context, program_state,body_transform_ta2.times(Mat4.translation(0.4, -3.5,0)), this.materials.leg_2);
 
