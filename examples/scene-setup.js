@@ -154,7 +154,24 @@ export class Scene_Setup extends Scene
 //             "text": new Text_Line( 35 )
 
         };
+        this.textures = {
+            smoke: new Texture("assets/Smoke.png", "LINEAR"),
 
+        };
+        this.explosion_material = new Material(new defs.Billboard_Explosion_Shader(), {
+            color: color(0, 0, 0, 1),
+            smoke: this.textures.smoke,
+        });
+        this.emitters = {
+            "smoke": new defs.Particle_Emitter(1000),
+        };
+        this.explosions = [
+            //create initial explosion to prevent lag later
+            {
+                "shape": new defs.Billboard_Quad(),
+                "mat": Mat4.translation(0, -10, 0)
+            }
+        ];
 
         this.materials = {
             blood: new Material(new defs.Phong_Shader(),{color:color(0,1,0,1),ambient: 0.3, diffusivity:0.5}),
