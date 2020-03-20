@@ -150,6 +150,7 @@ export class Scene_Setup extends Scene
             "blood" : new defs.Cube(),
             "gameover": new Text_Line( 35 ),
             "HP": new Text_Line( 35 ),
+          "ball": new defs.Subdivision_Sphere(4),
 
 //             "text": new Text_Line( 35 )
 
@@ -272,7 +273,49 @@ export class Scene_Setup extends Scene
 
         })
       };
+draw_mist(context, program_state, t) {
+        if (t*20 % 2 < 1) {
+            if (this.started === 1) {
+                this.started = 0;
+                for (let i = 0; i < 200; i++) {
+                    let r1 = Math.random();
+                    let r2 = Math.random();
+                    let r3 = Math.random();
+                    let angle = r3 * 2 * Math.PI;
+                    this.r1s[i] = r1;
+                    this.r2s[i] = r2;
+                    this.angels[i] = angle;
+                }
+            } else
+                this.started = 0;
+        } else {
+            this.started = 1;
+        }
 
+        let model_transform = Mat4.identity();
+
+
+        for (let i = 0; i < 200 - this.progress*20; i++) {
+            model_transform = Mat4.identity().times(Mat4.translation(-2,-2,0));
+            model_transform = model_transform.times(Mat4.rotation(this.angels[i], 0, 0, 1));
+            model_transform = model_transform.times(Mat4.translation(this.r1s[i] * 5+1, 0, -1.5));
+            if (this.r2s[i] > 0.5) {
+                this.r2s[i] -= 0.3;
+            }
+            model_transform = model_transform.times(Mat4.scale(this.r2s[i], this.r2s[i], this.r2s[i]));
+            this.shapes.ball.draw(context, program_state, model_transform, this.particle);
+        }
+        for (let i = 0; i < 100 - this.progress*10; i+=2) {
+            model_transform = Mat4.identity().times(Mat4.translation(-2,-2,2));
+            model_transform = model_transform.times(Mat4.rotation(this.angels[i], 0, 0, 1));
+            model_transform = model_transform.times(Mat4.translation(this.r1s[i] * 5+1, 0, -1.5));
+            if (this.r2s[i] > 0.5) {
+                this.r2s[i] -= 0.3;
+            }
+            model_transform = model_transform.times(Mat4.scale(this.r2s[i], this.r2s[i], this.r2s[i]));
+            this.shapes.ball.draw(context, program_state, model_transform, this.particle);
+        }
+    }
 
     draw_blood(context, program_state, transform, blood){
 
@@ -1026,6 +1069,8 @@ export class Scene_Setup extends Scene
 
         var s_screen2_transform = Mat4.translation(3.65, -2.15, 7.35).times(Mat4.rotation(-Math.PI/2, 0, 1, 0)).times(Mat4.scale(2, 2, 2));
         this.shapes.sheet2.draw(context, program_state, s_screen2_transform, this.materials.small_screen);
+        
+        this.draw_mist(context, program_state, t);
         //this.explosions[0].shape.draw(context, program_state, this.explosions[0].mat, this.explosion_material);
       }
 
