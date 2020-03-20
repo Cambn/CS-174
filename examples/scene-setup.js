@@ -258,27 +258,7 @@ export class Scene_Setup extends Scene
               this.selected = true;
               this.input = true;
           });
-          this.new_line();
-          this.new_line();
-          this.key_triggered_button("View room", ["0"], () => this.attached = () => this.initial_camera_location);
-          this.new_line();
-          this.key_triggered_button("View TA 1", ["9"], () => this.attached = () => this.TA_1);
-          this.new_line();
-          this.key_triggered_button("View TA 1 side", ["8"], () => this.attached = () => this.TA_1_side);
-          this.new_line();
-
-          this.new_line();
-          this.key_triggered_button("View TA 2", ["7"], () => this.attached = () => this.TA_2);
-
-          this.new_line();
-          this.key_triggered_button("correct/incorrect", ["6"], () => {
-
-            this.correct = !this.correct;
-            if (this.correct == false){
-                  this.blood = this.blood-1;
-            }
-
-        })
+        
       };
 draw_mist(context, program_state, t) {
         if (t*20 % 2 < 1) {
@@ -550,7 +530,7 @@ draw_mist(context, program_state, t) {
                       this.desired = this.TA_2.times(Mat4.translation(0,0,-1));
                       this.TA_trans = TA2_text_trans;
                 }
-                let mystring = "What is my full name?\n";
+                let mystring = "Which of the following is one of your TAs?\n";
                 this.shapes.text.set_string(mystring, context.context);
                 this.shapes.text.draw(context, program_state, this.TA_trans, this.materials.text_image);
 
@@ -1076,7 +1056,7 @@ draw_mist(context, program_state, t) {
 
         var s_screen2_transform = Mat4.translation(3.65, -2.15, 7.35).times(Mat4.rotation(-Math.PI/2, 0, 1, 0)).times(Mat4.scale(2, 2, 2));
         this.shapes.sheet2.draw(context, program_state, s_screen2_transform, this.materials.small_screen);
-        
+        if (this.game_started && (this.progress != 10))
         this.draw_mist(context, program_state, t);
         //this.explosions[0].shape.draw(context, program_state, this.explosions[0].mat, this.explosion_material);
       }
