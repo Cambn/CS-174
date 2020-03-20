@@ -236,6 +236,13 @@ export class Scene_Setup extends Scene
          this.choice = -1;
 
          this.TA = -1;
+       
+       this.particle = new Material( new defs.Textured_Phong(1), { ambient: 1, diffusivity: 0, specularity: 0, color: color(0,0,0,1),
+              texture: new Texture( "assets/cloud.png", true ) });
+          this.started = 1;
+          this.r1s = [];
+          this.r2s = [];
+          this.angels = [];
 
       }
 
