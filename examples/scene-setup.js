@@ -1026,6 +1026,7 @@ export class Scene_Setup extends Scene
 
         var s_screen2_transform = Mat4.translation(3.65, -2.15, 7.35).times(Mat4.rotation(-Math.PI/2, 0, 1, 0)).times(Mat4.scale(2, 2, 2));
         this.shapes.sheet2.draw(context, program_state, s_screen2_transform, this.materials.small_screen);
+        //this.explosions[0].shape.draw(context, program_state, this.explosions[0].mat, this.explosion_material);
       }
 
 
